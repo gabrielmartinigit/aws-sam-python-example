@@ -30,6 +30,25 @@ Resources:
             Path: /hello
             Method: get
 
+  # EventRule: 
+  #   Type: AWS::Events::Rule
+  #   Properties: 
+  #     Description: "EventRule"
+  #     EventPattern: 
+  #       source: 
+  #         - "demo.orders"
+  #       detail: 
+  #         state: 
+  #           - "created"
+  #     State: "ENABLED"
+  #     Targets: 
+  #       - 
+  #         Arn: 
+  #           Fn::GetAtt: 
+  #             - "invoiceServiceFunction"
+  #             - "Arn"
+  #         Id: "invoiceServiceTarget"
+
 Outputs:
   HelloWorldApi:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
