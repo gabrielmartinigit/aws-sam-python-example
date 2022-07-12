@@ -1,30 +1,39 @@
-import os
 import json
-import boto3
-
-aws_environment = os.environ['AWSENV']
-table_name = os.environ['TABLE']
-
-# Check if executing locally or on AWS, and configure DynamoDB connection accordingly
-if aws_environment == "AWS_SAM_LOCAL":
-    # SAM LOCAL
-    contents_table = boto3.resource(
-        'dynamodb',
-        endpoint_url="http://127.0.0.1:8000").Table(table_name)
-else:
-    # AWS
-    contents_table = boto3.resource(
-        'dynamodb').Table(table_name)
-
-s3_client = boto3.client("s3")
+from noticia import Noticia
 
 
 def lambda_handler(event, context):
+    print(event)
+
+    noticia = Noticia()
+
+    if 'path' in event:
+        if event['path'] == '/consultar/noticia':
+            body = {
+                "content": noticia.consultar_noticia()
+            }
+
+        elif event['path'] == '/listar/noticias':
+            body = noticia.listar_noticias()
+
+        elif event['path'] == '/upload/noticia':
+            event_body = json.loads(event['body'])
+            noticia.content = event_body['content']
+            noticia.upload_noticia()
+
+            body = {
+                "content": noticia.id
+            }
+    else:
+        noticia.id = event['id']
+        noticia.content = event['detail']['content']
+        noticia.store_noticia()
+
+        body = {
+            "content": "eventbrige event"
+        }
+
     return {
         "statusCode": 200,
-        "body": json.dumps({
-            "message": "noticia",
-            "env": f"{aws_environment}",
-            "connection": f"{contents_table}"
-        }),
+        "body": json.dumps(body),
     }

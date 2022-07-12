@@ -69,45 +69,39 @@ Resources:
           Properties:
             Path: /consultar/noticia
             Method: get
-
-  ReceitaService:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/receita/
-      Handler: app.lambda_handler
-      Runtime: python3.8
-      Architectures:
-        - x86_64
-      Environment:
-        Variables:
-          TABLE: !Ref TableName
-          AWSENV: !Ref EnvName
-      Policies: AmazonDynamoDBFullAccess
-      Events:
-        ConsultarReceita:
+        UploadNoticia:
           Type: Api
           Properties:
-            Path: /consultar/receita
+            Path: /upload/noticia
+            Method: post
+        ListarNoticias:
+          Type: Api
+          Properties:
+            Path: /listar/noticias
             Method: get
 
-  # EventRule:
-  #   Type: AWS::Events::Rule
-  #   Properties:
-  #     Description: "EventRule"
-  #     EventPattern:
-  #       source:
-  #         - "demo.orders"
-  #       detail:
-  #         state:
-  #           - "created"
-  #     State: "ENABLED"
-  #     Targets:
-  #       -
-  #         Arn:
-  #           Fn::GetAtt:
-  #             - "invoiceServiceFunction"
-  #             - "Arn"
-  #         Id: "invoiceServiceTarget"
+  NoticiaEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Regra para eventos de noticia"
+      State: "ENABLED"
+      EventPattern:
+        source:
+          - "contents.noticia"
+        detail:
+          state:
+            - "created"
+      Targets:
+        - Arn: !GetAtt NoticiaService.Arn
+          Id: "NoticiaServiceTarget"
+
+  PermissionForEventsToInvokeNoticiaService:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref NoticiaService
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt NoticiaEventRule.Arn
 
 Outputs:
   Api:
