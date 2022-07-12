@@ -13,9 +13,29 @@ Parameters:
   Region:
     Type: String
     Default: us-east-1
+  TableName:
+    Type: String
+    Default: ContentsTable
+  EnvName:
+    Type: String
+    Default: "AWS" # AWS_SAM_LOCAL
 
 Resources:
-  HelloWorldFunction:
+  ContentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  HelloWorldService:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/hello_world/
@@ -30,26 +50,66 @@ Resources:
             Path: /hello
             Method: get
 
-  # EventRule: 
+  NoticiaService:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/noticia/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TABLE: !Ref TableName
+          AWSENV: !Ref EnvName
+      Policies: AmazonDynamoDBFullAccess
+      Events:
+        ConsultarNoticia:
+          Type: Api
+          Properties:
+            Path: /consultar/noticia
+            Method: get
+
+  ReceitaService:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/receita/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          TABLE: !Ref TableName
+          AWSENV: !Ref EnvName
+      Policies: AmazonDynamoDBFullAccess
+      Events:
+        ConsultarReceita:
+          Type: Api
+          Properties:
+            Path: /consultar/receita
+            Method: get
+
+  # EventRule:
   #   Type: AWS::Events::Rule
-  #   Properties: 
+  #   Properties:
   #     Description: "EventRule"
-  #     EventPattern: 
-  #       source: 
+  #     EventPattern:
+  #       source:
   #         - "demo.orders"
-  #       detail: 
-  #         state: 
+  #       detail:
+  #         state:
   #           - "created"
   #     State: "ENABLED"
-  #     Targets: 
-  #       - 
-  #         Arn: 
-  #           Fn::GetAtt: 
+  #     Targets:
+  #       -
+  #         Arn:
+  #           Fn::GetAtt:
   #             - "invoiceServiceFunction"
   #             - "Arn"
   #         Id: "invoiceServiceTarget"
 
 Outputs:
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  Api:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
